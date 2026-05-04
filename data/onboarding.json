@@ -1,0 +1,34 @@
+[
+  {
+    "userId": "9e3d0eb8-21d6-4f12-a393-26934c4602c7",
+    "email": "murastation@yopmail.com",
+    "name": "tester zero",
+    "primaryStyle": "Masculine",
+    "size": "M",
+    "stylePreferences": [
+      "Minimalist",
+      "Streetwear",
+      "Vintage"
+    ],
+    "onboardingCompleted": true,
+    "uploadedFirstItem": false,
+    "updatedAt": "2026-04-12T09:09:27.197Z",
+    "createdAt": "2026-04-12T09:09:00.486Z"
+  },
+  {
+    "userId": "9b2bffd2-ba5f-4a40-885c-dcdd5b16d5d4",
+    "email": "murastation2@yopmail.com",
+    "name": "Mura 2",
+    "primaryStyle": "Masculine",
+    "size": "M",
+    "stylePreferences": [
+      "Vintage",
+      "Classic",
+      "Minimalist"
+    ],
+    "onboardingCompleted": true,
+    "uploadedFirstItem": true,
+    "updatedAt": "2026-04-25T23:04:58.363Z",
+    "createdAt": "2026-04-25T22:42:32.560Z"
+  }
+]

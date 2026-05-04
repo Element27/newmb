@@ -1,0 +1,80 @@
+[
+  {
+    "userId": "9e3d0eb8-21d6-4f12-a393-26934c4602c7",
+    "weekStart": "2026-05-10",
+    "days": [
+      {
+        "date": "2026-05-10",
+        "occasion": "work",
+        "itemIds": [
+          "8d67fb18-374d-4f30-87d2-18e0dd495230",
+          "5001f480-7518-434b-ad4b-557c3e2bd0c2"
+        ],
+        "notes": "",
+        "locked": false
+      },
+      {
+        "date": "2026-05-11",
+        "occasion": "work",
+        "itemIds": [
+          "54138687-fb3e-47db-8dcb-f48ebb9986c6",
+          "5af7bf91-b772-49be-a536-f50379b001b8"
+        ],
+        "notes": "",
+        "locked": false
+      },
+      {
+        "date": "2026-05-12",
+        "occasion": "work",
+        "itemIds": [
+          "db14a5e5-fa11-4263-bc7a-9a1ac01bab84",
+          "5001f480-7518-434b-ad4b-557c3e2bd0c2"
+        ],
+        "notes": "",
+        "locked": false
+      },
+      {
+        "date": "2026-05-13",
+        "occasion": "casual",
+        "itemIds": [
+          "b98d8865-eae5-41fd-8af4-8f20eb90a57f",
+          "5af7bf91-b772-49be-a536-f50379b001b8"
+        ],
+        "notes": "",
+        "locked": false
+      },
+      {
+        "date": "2026-05-14",
+        "occasion": "casual",
+        "itemIds": [
+          "a5dfea65-6aa3-47b3-8523-11f637ef9b20",
+          "5001f480-7518-434b-ad4b-557c3e2bd0c2"
+        ],
+        "notes": "",
+        "locked": false
+      },
+      {
+        "date": "2026-05-15",
+        "occasion": "travel",
+        "itemIds": [
+          "464b08c3-5b1f-4d2c-b4cd-7ba2160eb069",
+          "5af7bf91-b772-49be-a536-f50379b001b8"
+        ],
+        "notes": "",
+        "locked": false
+      },
+      {
+        "date": "2026-05-16",
+        "occasion": "casual",
+        "itemIds": [
+          "71f8cbd8-41bd-4a1b-a82f-a388ec372733",
+          "5001f480-7518-434b-ad4b-557c3e2bd0c2"
+        ],
+        "notes": "",
+        "locked": false
+      }
+    ],
+    "generatedAt": "2026-05-04T21:50:22.040Z",
+    "updatedAt": "2026-05-04T21:50:22.040Z"
+  }
+]
