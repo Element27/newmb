@@ -1,12 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSessionTokenFromRequest = getSessionTokenFromRequest;
-exports.getAuthenticatedUser = getAuthenticatedUser;
-exports.requireAuthenticatedUser = requireAuthenticatedUser;
-exports.setSessionCookie = setSessionCookie;
-exports.clearSessionCookie = clearSessionCookie;
-const sessionStore_1 = require("./sessionStore");
-const supabase_1 = require("../config/supabase");
+import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS, deleteSession, getSession, } from "./sessionStore.js";
+import { getSupabaseAnon } from "../config/supabase.js";
 function parseCookies(rawCookieHeader) {
     const result = {};
     if (!rawCookieHeader)
@@ -19,15 +12,15 @@ function parseCookies(rawCookieHeader) {
     });
     return result;
 }
-function getSessionTokenFromRequest(req) {
+export function getSessionTokenFromRequest(req) {
     const cookies = parseCookies(req.headers.cookie);
-    return cookies[sessionStore_1.SESSION_COOKIE_NAME] || null;
+    return cookies[SESSION_COOKIE_NAME] || null;
 }
-function getAuthenticatedUser(req) {
+export function getAuthenticatedUser(req) {
     const token = getSessionTokenFromRequest(req);
     if (!token)
         return null;
-    const session = (0, sessionStore_1.getSession)(token);
+    const session = getSession(token);
     if (!session)
         return null;
     return session.user;
@@ -42,11 +35,11 @@ function getBearerToken(req) {
     const token = raw.slice(7).trim();
     return token || null;
 }
-async function requireAuthenticatedUser(req, res) {
+export async function requireAuthenticatedUser(req, res) {
     const bearer = getBearerToken(req);
     if (bearer) {
         console.log(`[auth] found bearer token (starts with ${bearer.slice(0, 10)}...)`);
-        const supabase = (0, supabase_1.getSupabaseAnon)();
+        const supabase = getSupabaseAnon();
         if (!supabase) {
             console.error("[auth] supabase client not configured for bearer validation");
             res.status(500).json({ ok: false, error: "Supabase auth is not configured" });
@@ -73,25 +66,25 @@ async function requireAuthenticatedUser(req, res) {
     res.status(401).json({ ok: false, error: "Unauthorized" });
     return null;
 }
-function setSessionCookie(res, token) {
+export function setSessionCookie(res, token) {
     const parts = [
-        `${sessionStore_1.SESSION_COOKIE_NAME}=${encodeURIComponent(token)}`,
+        `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}`,
         "Path=/",
         "HttpOnly",
         "SameSite=Lax",
-        `Max-Age=${sessionStore_1.SESSION_MAX_AGE_SECONDS}`,
+        `Max-Age=${SESSION_MAX_AGE_SECONDS}`,
     ];
     if (process.env.NODE_ENV === "production") {
         parts.push("Secure");
     }
     res.setHeader("Set-Cookie", parts.join("; "));
 }
-function clearSessionCookie(req, res) {
+export function clearSessionCookie(req, res) {
     const token = getSessionTokenFromRequest(req);
     if (token)
-        (0, sessionStore_1.deleteSession)(token);
+        deleteSession(token);
     const parts = [
-        `${sessionStore_1.SESSION_COOKIE_NAME}=`,
+        `${SESSION_COOKIE_NAME}=`,
         "Path=/",
         "HttpOnly",
         "SameSite=Lax",

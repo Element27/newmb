@@ -6,7 +6,7 @@ import {
   sendMagicLink,
   session,
   signup,
-} from "../controllers/authController";
+} from "../controllers/authController.js";
 
 const router = Router();
 
@@ -18,3 +18,4 @@ router.get("/session", session);
 router.get("/callback", authCallback);
 
 export default router;
+

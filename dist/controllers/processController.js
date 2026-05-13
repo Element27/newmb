@@ -1,13 +1,11 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.processImage = void 0;
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
-const classifier_1 = require("../utils/classifier");
-const httpSession_1 = require("../auth/httpSession");
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { classifyImage } from "../utils/classifier.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 function inferCategoryFromName(name) {
     const lower = String(name || "").toLowerCase();
     if (/(shirt|tee|top|blouse|sweater|hoodie)/.test(lower))
@@ -24,17 +22,17 @@ function inferCategoryFromName(name) {
         return "accessory";
     return null;
 }
-const processImage = async (req, res) => {
+export const processImage = async (req, res) => {
     try {
-        const authUser = await (0, httpSession_1.requireAuthenticatedUser)(req, res);
+        const authUser = await requireAuthenticatedUser(req, res);
         if (!authUser)
             return;
         const { id, name, originalPath } = req.body;
         if (!id || !originalPath) {
             return res.status(400).json({ ok: false, error: "Missing id or originalPath" });
         }
-        const localFilePath = path_1.default.join(__dirname, "../../public", originalPath.replace(/^\//, ""));
-        if (!fs_1.default.existsSync(localFilePath)) {
+        const localFilePath = path.join(__dirname, "../../public", originalPath.replace(/^\//, ""));
+        if (!fs.existsSync(localFilePath)) {
             return res.status(404).json({
                 ok: false,
                 error: "Original file not found",
@@ -42,7 +40,7 @@ const processImage = async (req, res) => {
             });
         }
         // Attempt AI classification
-        const aiResult = await (0, classifier_1.classifyImage)(localFilePath);
+        const aiResult = await classifyImage(localFilePath);
         let category = aiResult.category;
         let label = aiResult.label;
         let confidence = aiResult.confidence;
@@ -75,4 +73,3 @@ const processImage = async (req, res) => {
         });
     }
 };
-exports.processImage = processImage;

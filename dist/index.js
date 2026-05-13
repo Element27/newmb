@@ -1,47 +1,46 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const path_1 = __importDefault(require("path"));
-const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
-const itemRoutes_1 = __importDefault(require("./routes/itemRoutes"));
-const onboardingRoutes_1 = __importDefault(require("./routes/onboardingRoutes"));
-const plannerRoutes_1 = __importDefault(require("./routes/plannerRoutes"));
-const processRoutes_1 = __importDefault(require("./routes/processRoutes"));
-const recommendRoutes_1 = __importDefault(require("./routes/recommendRoutes"));
-const uploadRoutes_1 = __importDefault(require("./routes/uploadRoutes"));
-const saveRoutes_1 = __importDefault(require("./routes/saveRoutes"));
-const weeklyPlannerJob_1 = require("./jobs/weeklyPlannerJob");
-dotenv_1.default.config();
-const app = (0, express_1.default)();
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+import authRoutes from "./routes/authRoutes.js";
+import itemRoutes from "./routes/itemRoutes.js";
+import onboardingRoutes from "./routes/onboardingRoutes.js";
+import plannerRoutes from "./routes/plannerRoutes.js";
+import processRoutes from "./routes/processRoutes.js";
+import recommendRoutes from "./routes/recommendRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import saveRoutes from "./routes/saveRoutes.js";
+import { startWeeklyPlannerJob } from "./jobs/weeklyPlannerJob.js";
+dotenv.config();
+const app = express();
 const PORT = process.env.PORT || 3001;
-app.use((0, cors_1.default)({
+app.use(cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
     exposedHeaders: ["Set-Cookie"],
 }));
-app.use(express_1.default.json());
+app.use(express.json());
 // Static files
-app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../public/uploads")));
-app.use("/processed", express_1.default.static(path_1.default.join(__dirname, "../public/processed")));
+app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
+app.use("/processed", express.static(path.join(__dirname, "../public/processed")));
 // Routes
-app.use("/api/auth", authRoutes_1.default);
-app.use("/api/items", itemRoutes_1.default);
-app.use("/api/onboarding", onboardingRoutes_1.default);
-app.use("/api/planner", plannerRoutes_1.default);
-app.use("/api/process", processRoutes_1.default);
-app.use("/api/recommend", recommendRoutes_1.default);
-app.use("/api/upload", uploadRoutes_1.default);
-app.use("/api/save", saveRoutes_1.default);
+app.use("/api/auth", authRoutes);
+app.use("/api/items", itemRoutes);
+app.use("/api/onboarding", onboardingRoutes);
+app.use("/api/planner", plannerRoutes);
+app.use("/api/process", processRoutes);
+app.use("/api/recommend", recommendRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/save", saveRoutes);
 app.get("/health", (req, res) => {
     res.json({ status: "ok" });
 });
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
-    (0, weeklyPlannerJob_1.startWeeklyPlannerJob)();
+    startWeeklyPlannerJob();
 });

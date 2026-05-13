@@ -1,8 +1,13 @@
 import fs from "fs";
 import path from "path";
-import { getSupabaseServer } from "../config/supabase";
-import { generatePlanForUser } from "../controllers/plannerController";
-import { getNextMonday, toISODate } from "../utils/weeklyPlanner";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { getSupabaseServer } from "../config/supabase.js";
+import { generatePlanForUser } from "../controllers/plannerController.js";
+import { getNextMonday, toISODate } from "../utils/weeklyPlanner.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 type JobState = {
   lastRunSaturday?: string;
@@ -60,7 +65,7 @@ export async function runWeeklyPlannerJob(force = false) {
   }
 
   const weekStart = toISODate(getNextMonday(now));
-  await Promise.all(userIds.map((userId) => generatePlanForUser(userId, weekStart)));
+  await Promise.all(userIds.map((userId: string) => generatePlanForUser(userId, weekStart)));
 
   if (isSaturday || force) {
     writeState({ lastRunSaturday: todayISO });
@@ -75,4 +80,5 @@ export function startWeeklyPlannerJob() {
     void runWeeklyPlannerJob(false);
   }, everyHourMs);
 }
+
 

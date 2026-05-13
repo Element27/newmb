@@ -5,6 +5,7 @@ export type WardrobeItem = {
   colorHex: string;
   originalPath: string;
   processedPath: string;
+  label?: string;
 };
 
 function isNeutral(hex: string): boolean {

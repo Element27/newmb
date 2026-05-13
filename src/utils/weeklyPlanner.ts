@@ -1,4 +1,4 @@
-import { recommendOutfit, WardrobeItem } from "./recommend";
+import { recommendOutfit, WardrobeItem } from "./recommend.js";
 
 export type PlannerOccasion = "work" | "casual" | "travel";
 
@@ -135,3 +135,4 @@ export function mergePlanDay(
     updatedAt: new Date().toISOString(),
   };
 }
+

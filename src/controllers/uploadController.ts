@@ -2,9 +2,14 @@ import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import fs from "fs";
-import { requireAuthenticatedUser } from "../auth/httpSession";
-import { classifyImage, extractAverageColorHex } from "../utils/classifier";
-import { persistWardrobeItem } from "./saveController";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
+import { classifyImage, extractAverageColorHex } from "../utils/classifier.js";
+import { persistWardrobeItem } from "./saveController.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 function inferCategoryFromName(
     name: string
@@ -97,3 +102,4 @@ export const deleteFile = async (req: Request, res: Response) => {
         res.status(500).json({ ok: false, error: error.message });
     }
 };
+

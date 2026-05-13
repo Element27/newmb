@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { getSupabaseServer } from "../config/supabase";
-import { requireAuthenticatedUser } from "../auth/httpSession";
+import { getSupabaseServer } from "../config/supabase.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
 
 /**
  * POST /api/history
@@ -93,3 +93,4 @@ export const getOutfitHistory = async (req: Request, res: Response) => {
 
   return res.json({ ok: true, history });
 };
+

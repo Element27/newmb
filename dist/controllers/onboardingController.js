@@ -1,13 +1,11 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveOnboardingProfile = exports.getOnboardingProfile = void 0;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const supabase_1 = require("../config/supabase");
-const httpSession_1 = require("../auth/httpSession");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { getSupabaseServer } from "../config/supabase.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const DEFAULT_PROFILE = {
     name: null,
     primaryStyle: null,
@@ -17,14 +15,14 @@ const DEFAULT_PROFILE = {
     uploadedFirstItem: false,
 };
 function getFallbackFile() {
-    return path_1.default.join(__dirname, "../../data/onboarding.json");
+    return path.join(__dirname, "../../data/onboarding.json");
 }
 function readFallbackProfiles() {
     const file = getFallbackFile();
-    if (!fs_1.default.existsSync(file))
+    if (!fs.existsSync(file))
         return [];
     try {
-        return JSON.parse(fs_1.default.readFileSync(file, "utf-8"));
+        return JSON.parse(fs.readFileSync(file, "utf-8"));
     }
     catch {
         return [];
@@ -32,14 +30,14 @@ function readFallbackProfiles() {
 }
 function writeFallbackProfiles(profiles) {
     const file = getFallbackFile();
-    const dir = path_1.default.dirname(file);
-    if (!fs_1.default.existsSync(dir)) {
-        fs_1.default.mkdirSync(dir, { recursive: true });
+    const dir = path.dirname(file);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
     }
-    fs_1.default.writeFileSync(file, JSON.stringify(profiles, null, 2));
+    fs.writeFileSync(file, JSON.stringify(profiles, null, 2));
 }
-const getOnboardingProfile = async (req, res) => {
-    const authUser = await (0, httpSession_1.requireAuthenticatedUser)(req, res);
+export const getOnboardingProfile = async (req, res) => {
+    const authUser = await requireAuthenticatedUser(req, res);
     if (!authUser)
         return;
     const userId = authUser.id;
@@ -47,7 +45,7 @@ const getOnboardingProfile = async (req, res) => {
     if (!userId) {
         return res.status(400).json({ ok: false, error: "Missing userId" });
     }
-    const supabase = (0, supabase_1.getSupabaseServer)();
+    const supabase = getSupabaseServer();
     if (supabase) {
         const { data, error } = await supabase
             .from("profiles")
@@ -78,9 +76,8 @@ const getOnboardingProfile = async (req, res) => {
         profile: fallback || { userId, email, ...DEFAULT_PROFILE },
     });
 };
-exports.getOnboardingProfile = getOnboardingProfile;
-const saveOnboardingProfile = async (req, res) => {
-    const authUser = await (0, httpSession_1.requireAuthenticatedUser)(req, res);
+export const saveOnboardingProfile = async (req, res) => {
+    const authUser = await requireAuthenticatedUser(req, res);
     if (!authUser)
         return;
     const payload = req.body;
@@ -101,7 +98,7 @@ const saveOnboardingProfile = async (req, res) => {
         uploadedFirstItem: Boolean(payload.uploadedFirstItem),
         updatedAt: new Date().toISOString(),
     };
-    const supabase = (0, supabase_1.getSupabaseServer)();
+    const supabase = getSupabaseServer();
     if (supabase) {
         const upsertPayload = {
             user_id: profile.userId,
@@ -135,4 +132,3 @@ const saveOnboardingProfile = async (req, res) => {
     writeFallbackProfiles(profiles);
     return res.json({ ok: true, profile });
 };
-exports.saveOnboardingProfile = saveOnboardingProfile;

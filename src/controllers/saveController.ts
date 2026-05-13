@@ -1,8 +1,13 @@
 import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
-import { getSupabaseServer, STORAGE_BUCKET } from "../config/supabase";
-import { requireAuthenticatedUser } from "../auth/httpSession";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { getSupabaseServer, STORAGE_BUCKET } from "../config/supabase.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 type SaveItemPayload = {
     id: string;
@@ -108,3 +113,4 @@ export const saveItem = async (req: Request, res: Response) => {
         return res.status(500).json({ ok: false, error: error.message });
     }
 };
+

@@ -1,24 +1,21 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.regenerateWeeklyPlanDay = exports.updateWeeklyPlanDay = exports.generateWeeklyPlanHandler = exports.getWeeklyPlan = void 0;
-exports.generatePlanForUser = generatePlanForUser;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const supabase_1 = require("../config/supabase");
-const weeklyPlanner_1 = require("../utils/weeklyPlanner");
-const httpSession_1 = require("../auth/httpSession");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { getSupabaseServer } from "../config/supabase.js";
+import { generateWeeklyPlan, getNextMonday, mergePlanDay, toISODate, } from "../utils/weeklyPlanner.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 function getFallbackFile() {
-    return path_1.default.join(__dirname, "../../data/weeklyPlans.json");
+    return path.join(__dirname, "../../data/weeklyPlans.json");
 }
 function readFallbackPlans() {
     const file = getFallbackFile();
-    if (!fs_1.default.existsSync(file))
+    if (!fs.existsSync(file))
         return [];
     try {
-        return JSON.parse(fs_1.default.readFileSync(file, "utf-8"));
+        return JSON.parse(fs.readFileSync(file, "utf-8"));
     }
     catch {
         return [];
@@ -26,15 +23,15 @@ function readFallbackPlans() {
 }
 function writeFallbackPlans(plans) {
     const file = getFallbackFile();
-    const dir = path_1.default.dirname(file);
-    if (!fs_1.default.existsSync(dir))
-        fs_1.default.mkdirSync(dir, { recursive: true });
-    fs_1.default.writeFileSync(file, JSON.stringify(plans, null, 2));
+    const dir = path.dirname(file);
+    if (!fs.existsSync(dir))
+        fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(plans, null, 2));
 }
 function resolveWeekStart(input) {
     if (input && /^\d{4}-\d{2}-\d{2}$/.test(input))
         return input;
-    return (0, weeklyPlanner_1.toISODate)((0, weeklyPlanner_1.getNextMonday)(new Date()));
+    return toISODate(getNextMonday(new Date()));
 }
 function mapItems(data) {
     return (data || []).map((item) => ({
@@ -47,7 +44,7 @@ function mapItems(data) {
     }));
 }
 async function loadWardrobeItems(userId) {
-    const supabase = (0, supabase_1.getSupabaseServer)();
+    const supabase = getSupabaseServer();
     if (supabase) {
         const { data, error } = await supabase
             .from("items")
@@ -59,8 +56,21 @@ async function loadWardrobeItems(userId) {
     }
     return [];
 }
+async function loadUserPrimaryStyle(userId) {
+    const supabase = getSupabaseServer();
+    if (supabase) {
+        const { data, error } = await supabase
+            .from("profiles")
+            .select("primary_style")
+            .eq("user_id", userId)
+            .maybeSingle();
+        if (!error && data)
+            return data.primary_style ?? null;
+    }
+    return null;
+}
 async function loadPlan(userId, weekStart) {
-    const supabase = (0, supabase_1.getSupabaseServer)();
+    const supabase = getSupabaseServer();
     if (supabase) {
         const { data, error } = await supabase
             .from("weekly_plans")
@@ -83,7 +93,7 @@ async function loadPlan(userId, weekStart) {
     return fallback || null;
 }
 async function savePlan(plan) {
-    const supabase = (0, supabase_1.getSupabaseServer)();
+    const supabase = getSupabaseServer();
     if (supabase) {
         const payload = {
             user_id: plan.userId,
@@ -108,14 +118,17 @@ async function savePlan(plan) {
     }
     writeFallbackPlans(all);
 }
-async function generatePlanForUser(userId, weekStart) {
-    const items = await loadWardrobeItems(userId);
-    const plan = (0, weeklyPlanner_1.generateWeeklyPlan)(userId, items, weekStart);
+export async function generatePlanForUser(userId, weekStart) {
+    const [items, primaryStyle] = await Promise.all([
+        loadWardrobeItems(userId),
+        loadUserPrimaryStyle(userId),
+    ]);
+    const plan = generateWeeklyPlan(userId, items, weekStart, primaryStyle);
     await savePlan(plan);
     return plan;
 }
-const getWeeklyPlan = async (req, res) => {
-    const authUser = await (0, httpSession_1.requireAuthenticatedUser)(req, res);
+export const getWeeklyPlan = async (req, res) => {
+    const authUser = await requireAuthenticatedUser(req, res);
     if (!authUser)
         return;
     const userId = authUser.id;
@@ -123,9 +136,8 @@ const getWeeklyPlan = async (req, res) => {
     const plan = await loadPlan(userId, weekStart);
     return res.json({ ok: true, weekStart, plan });
 };
-exports.getWeeklyPlan = getWeeklyPlan;
-const generateWeeklyPlanHandler = async (req, res) => {
-    const authUser = await (0, httpSession_1.requireAuthenticatedUser)(req, res);
+export const generateWeeklyPlanHandler = async (req, res) => {
+    const authUser = await requireAuthenticatedUser(req, res);
     if (!authUser)
         return;
     const userId = authUser.id;
@@ -133,9 +145,8 @@ const generateWeeklyPlanHandler = async (req, res) => {
     const plan = await generatePlanForUser(userId, weekStart);
     return res.json({ ok: true, plan });
 };
-exports.generateWeeklyPlanHandler = generateWeeklyPlanHandler;
-const updateWeeklyPlanDay = async (req, res) => {
-    const authUser = await (0, httpSession_1.requireAuthenticatedUser)(req, res);
+export const updateWeeklyPlanDay = async (req, res) => {
+    const authUser = await requireAuthenticatedUser(req, res);
     if (!authUser)
         return;
     const userId = authUser.id;
@@ -161,13 +172,12 @@ const updateWeeklyPlanDay = async (req, res) => {
     if (typeof req.body.locked === "boolean") {
         patch.locked = req.body.locked;
     }
-    const updated = (0, weeklyPlanner_1.mergePlanDay)(current, date, patch);
+    const updated = mergePlanDay(current, date, patch);
     await savePlan(updated);
     return res.json({ ok: true, plan: updated });
 };
-exports.updateWeeklyPlanDay = updateWeeklyPlanDay;
-const regenerateWeeklyPlanDay = async (req, res) => {
-    const authUser = await (0, httpSession_1.requireAuthenticatedUser)(req, res);
+export const regenerateWeeklyPlanDay = async (req, res) => {
+    const authUser = await requireAuthenticatedUser(req, res);
     if (!authUser)
         return;
     const userId = authUser.id;
@@ -185,12 +195,12 @@ const regenerateWeeklyPlanDay = async (req, res) => {
     const items = await loadWardrobeItems(userId);
     const candidates = items.filter((item) => !basePlan.days.some((day) => day.itemIds.includes(item.id) && day.date !== date));
     const source = candidates.length > 0 ? candidates : items;
-    const regenerated = (0, weeklyPlanner_1.generateWeeklyPlan)(userId, source, weekStart);
+    const regenerated = generateWeeklyPlan(userId, source, weekStart);
     const replacement = regenerated.days.find((day) => day.date === date);
     if (!replacement) {
         return res.status(500).json({ ok: false, error: "Failed to regenerate day" });
     }
-    const merged = (0, weeklyPlanner_1.mergePlanDay)(basePlan, date, {
+    const merged = mergePlanDay(basePlan, date, {
         occasion: targetDay.occasion,
         itemIds: replacement.itemIds,
         notes: targetDay.notes || "",
@@ -199,4 +209,3 @@ const regenerateWeeklyPlanDay = async (req, res) => {
     await savePlan(merged);
     return res.json({ ok: true, plan: merged });
 };
-exports.regenerateWeeklyPlanDay = regenerateWeeklyPlanDay;

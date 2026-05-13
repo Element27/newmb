@@ -1,8 +1,13 @@
 import { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
-import { getSupabaseServer } from "../config/supabase";
-import { requireAuthenticatedUser } from "../auth/httpSession";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { getSupabaseServer } from "../config/supabase.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 type OnboardingProfile = {
   userId: string;
@@ -162,3 +167,4 @@ export const saveOnboardingProfile = async (req: Request, res: Response) => {
   writeFallbackProfiles(profiles);
   return res.json({ ok: true, profile });
 };
+

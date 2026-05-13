@@ -1,10 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const plannerController_1 = require("../controllers/plannerController");
-const router = (0, express_1.Router)();
-router.get("/", plannerController_1.getWeeklyPlan);
-router.post("/generate", plannerController_1.generateWeeklyPlanHandler);
-router.patch("/day", plannerController_1.updateWeeklyPlanDay);
-router.post("/day/regenerate", plannerController_1.regenerateWeeklyPlanDay);
-exports.default = router;
+import { Router } from "express";
+import { generateWeeklyPlanHandler, getWeeklyPlan, regenerateWeeklyPlanDay, updateWeeklyPlanDay, } from "../controllers/plannerController.js";
+const router = Router();
+router.get("/", getWeeklyPlan);
+router.post("/generate", generateWeeklyPlanHandler);
+router.patch("/day", updateWeeklyPlanDay);
+router.post("/day/regenerate", regenerateWeeklyPlanDay);
+export default router;

@@ -1,11 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteItem = exports.getItems = void 0;
-const supabase_1 = require("../config/supabase");
-const httpSession_1 = require("../auth/httpSession");
-const getItems = async (req, res) => {
-    const supabase = (0, supabase_1.getSupabaseServer)();
-    const authUser = await (0, httpSession_1.requireAuthenticatedUser)(req, res);
+import { getSupabaseServer } from "../config/supabase.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
+export const getItems = async (req, res) => {
+    const supabase = getSupabaseServer();
+    const authUser = await requireAuthenticatedUser(req, res);
     if (!authUser)
         return;
     const userId = authUser.id;
@@ -37,10 +34,9 @@ const getItems = async (req, res) => {
     // ... (keeping implementation parity if possible)
     res.json({ items: [] });
 };
-exports.getItems = getItems;
-const deleteItem = async (req, res) => {
-    const supabase = (0, supabase_1.getSupabaseServer)();
-    const authUser = await (0, httpSession_1.requireAuthenticatedUser)(req, res);
+export const deleteItem = async (req, res) => {
+    const supabase = getSupabaseServer();
+    const authUser = await requireAuthenticatedUser(req, res);
     if (!authUser)
         return;
     const userId = authUser.id;
@@ -60,4 +56,3 @@ const deleteItem = async (req, res) => {
     }
     res.status(500).json({ ok: false, error: "Supabase not configured" });
 };
-exports.deleteItem = deleteItem;

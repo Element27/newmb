@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.session = exports.logout = exports.authCallback = exports.sendMagicLink = exports.login = exports.signup = void 0;
-const supabase_1 = require("../config/supabase");
-const httpSession_1 = require("../auth/httpSession");
-const sessionStore_1 = require("../auth/sessionStore");
+import { getSupabaseAnon } from "../config/supabase.js";
+import { clearSessionCookie, getAuthenticatedUser, setSessionCookie } from "../auth/httpSession.js";
+import { createSession } from "../auth/sessionStore.js";
 function normalizeEmail(email) {
     return String(email || "").trim().toLowerCase();
 }
@@ -54,14 +51,14 @@ function logCallbackParams(req) {
         nextPreview: next ? `${next.slice(0, 100)}${next.length > 100 ? "..." : ""}` : "",
     });
 }
-const signup = async (req, res) => {
+export const signup = async (req, res) => {
     const email = normalizeEmail(req.body.email);
     const password = normalizePassword(req.body.password);
     const name = String(req.body.name || "").trim();
     if (!email || !password) {
         return res.status(400).json({ ok: false, error: "Email and password are required" });
     }
-    const supabase = (0, supabase_1.getSupabaseAnon)();
+    const supabase = getSupabaseAnon();
     if (!supabase) {
         return res.status(500).json({ ok: false, error: "Supabase auth is not configured" });
     }
@@ -76,11 +73,11 @@ const signup = async (req, res) => {
         return res.status(400).json({ ok: false, error: signUpError.message });
     }
     if (signUpData.session && signUpData.user) {
-        const session = (0, sessionStore_1.createSession)({
+        const session = createSession({
             id: signUpData.user.id,
             email: signUpData.user.email || email,
         });
-        (0, httpSession_1.setSessionCookie)(res, session.token);
+        setSessionCookie(res, session.token);
         return res.json({
             ok: true,
             user: { id: signUpData.user.id, email: signUpData.user.email || email },
@@ -93,14 +90,13 @@ const signup = async (req, res) => {
         message: "Check your email to confirm your account, then sign in.",
     });
 };
-exports.signup = signup;
-const login = async (req, res) => {
+export const login = async (req, res) => {
     const email = normalizeEmail(req.body.email);
     const password = normalizePassword(req.body.password);
     if (!email || !password) {
         return res.status(400).json({ ok: false, error: "Email and password are required" });
     }
-    const supabase = (0, supabase_1.getSupabaseAnon)();
+    const supabase = getSupabaseAnon();
     if (!supabase) {
         return res.status(500).json({ ok: false, error: "Supabase auth is not configured" });
     }
@@ -108,24 +104,23 @@ const login = async (req, res) => {
     if (error || !data.user) {
         return res.status(401).json({ ok: false, error: error?.message || "Invalid credentials" });
     }
-    const session = (0, sessionStore_1.createSession)({
+    const session = createSession({
         id: data.user.id,
         email: data.user.email || email,
     });
-    (0, httpSession_1.setSessionCookie)(res, session.token);
+    setSessionCookie(res, session.token);
     return res.json({
         ok: true,
         user: { id: data.user.id, email: data.user.email || email },
     });
 };
-exports.login = login;
-const sendMagicLink = async (req, res) => {
+export const sendMagicLink = async (req, res) => {
     const email = normalizeEmail(req.body.email);
     const name = String(req.body.name || "").trim();
     if (!email) {
         return res.status(400).json({ ok: false, error: "Email is required" });
     }
-    const supabase = (0, supabase_1.getSupabaseAnon)();
+    const supabase = getSupabaseAnon();
     if (!supabase) {
         return res.status(500).json({ ok: false, error: "Supabase auth is not configured" });
     }
@@ -147,8 +142,7 @@ const sendMagicLink = async (req, res) => {
         message: "Magic link sent. Check your inbox to continue.",
     });
 };
-exports.sendMagicLink = sendMagicLink;
-const authCallback = async (req, res) => {
+export const authCallback = async (req, res) => {
     logCallbackParams(req);
     const tokenHash = String(req.query.token_hash || "");
     const code = String(req.query.code || "");
@@ -157,7 +151,7 @@ const authCallback = async (req, res) => {
     if (!tokenHash && !code) {
         return res.redirect(`${next}?auth_error=missing_token`);
     }
-    const supabase = (0, supabase_1.getSupabaseAnon)();
+    const supabase = getSupabaseAnon();
     if (!supabase) {
         return res.redirect(`${next}?auth_error=misconfigured`);
     }
@@ -190,23 +184,20 @@ const authCallback = async (req, res) => {
     if (!resolvedUser) {
         return res.redirect(`${next}?auth_error=invalid_or_expired_link`);
     }
-    const session = (0, sessionStore_1.createSession)({
+    const session = createSession({
         id: resolvedUser.id,
         email: resolvedUser.email || null,
     });
-    (0, httpSession_1.setSessionCookie)(res, session.token);
+    setSessionCookie(res, session.token);
     return res.redirect(`${next}?verified=1`);
 };
-exports.authCallback = authCallback;
-const logout = async (req, res) => {
-    (0, httpSession_1.clearSessionCookie)(req, res);
+export const logout = async (req, res) => {
+    clearSessionCookie(req, res);
     return res.json({ ok: true });
 };
-exports.logout = logout;
-const session = async (req, res) => {
-    const user = (0, httpSession_1.getAuthenticatedUser)(req);
+export const session = async (req, res) => {
+    const user = getAuthenticatedUser(req);
     if (!user)
         return res.json({ ok: true, user: null });
     return res.json({ ok: true, user });
 };
-exports.session = session;

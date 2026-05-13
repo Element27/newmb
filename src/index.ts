@@ -3,16 +3,21 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-import authRoutes from "./routes/authRoutes";
-import itemRoutes from "./routes/itemRoutes";
-import onboardingRoutes from "./routes/onboardingRoutes";
-import plannerRoutes from "./routes/plannerRoutes";
-import processRoutes from "./routes/processRoutes";
-import recommendRoutes from "./routes/recommendRoutes";
-import uploadRoutes from "./routes/uploadRoutes";
-import saveRoutes from "./routes/saveRoutes";
-import { startWeeklyPlannerJob } from "./jobs/weeklyPlannerJob";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import authRoutes from "./routes/authRoutes.js";
+import itemRoutes from "./routes/itemRoutes.js";
+import onboardingRoutes from "./routes/onboardingRoutes.js";
+import plannerRoutes from "./routes/plannerRoutes.js";
+import processRoutes from "./routes/processRoutes.js";
+import recommendRoutes from "./routes/recommendRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import saveRoutes from "./routes/saveRoutes.js";
+import { startWeeklyPlannerJob } from "./jobs/weeklyPlannerJob.js";
 
 dotenv.config();
 
@@ -51,3 +56,4 @@ app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     startWeeklyPlannerJob();
 });
+
