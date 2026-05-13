@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
-import { getSupabaseServer } from "../config/supabase";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { getSupabaseServer } from "../config/supabase.js";
 import {
   WeeklyPlan,
   WeeklyPlanDay,
@@ -9,9 +11,12 @@ import {
   getNextMonday,
   mergePlanDay,
   toISODate,
-} from "../utils/weeklyPlanner";
-import { WardrobeItem } from "../utils/recommend";
-import { requireAuthenticatedUser } from "../auth/httpSession";
+} from "../utils/weeklyPlanner.js";
+import { WardrobeItem } from "../utils/recommend.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 type DbPlanRow = {
   user_id: string;
@@ -254,3 +259,4 @@ export const regenerateWeeklyPlanDay = async (req: Request, res: Response) => {
   await savePlan(merged);
   return res.json({ ok: true, plan: merged });
 };
+

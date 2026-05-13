@@ -4,8 +4,8 @@ import {
   SESSION_MAX_AGE_SECONDS,
   deleteSession,
   getSession,
-} from "./sessionStore";
-import { getSupabaseAnon } from "../config/supabase";
+} from "./sessionStore.js";
+import { getSupabaseAnon } from "../config/supabase.js";
 
 function parseCookies(rawCookieHeader?: string) {
   const result: Record<string, string> = {};
@@ -108,3 +108,4 @@ export function clearSessionCookie(req: Request, res: Response) {
   }
   res.setHeader("Set-Cookie", parts.join("; "));
 }
+

@@ -1,7 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const recommendController_1 = require("../controllers/recommendController");
-const router = (0, express_1.Router)();
-router.post("/", recommendController_1.recommend);
-exports.default = router;
+import { Router } from "express";
+import { recommend, getDailySuggestion } from "../controllers/recommendController.js";
+const router = Router();
+router.post("/", recommend);
+router.get("/daily", getDailySuggestion);
+export default router;

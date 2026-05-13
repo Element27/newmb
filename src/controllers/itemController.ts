@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { getSupabaseServer } from "../config/supabase";
-import { requireAuthenticatedUser } from "../auth/httpSession";
+import { getSupabaseServer } from "../config/supabase.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
 
 export const getItems = async (req: Request, res: Response) => {
     const supabase = getSupabaseServer();
@@ -66,3 +66,4 @@ export const deleteItem = async (req: Request, res: Response) => {
 
     res.status(500).json({ ok: false, error: "Supabase not configured" });
 };
+

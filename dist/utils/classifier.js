@@ -1,145 +1,151 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
+import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import fs from "fs";
+import path from "path";
+import Jimp from "jimp";
+async function classifyWithGemini(imagePath, manualCategory) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        generationConfig: { responseMimeType: "application/json" }
+    });
+    const ext = path.extname(imagePath).toLowerCase().replace(".", "") || "jpeg";
+    const mimeType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+    const base64Image = fs.readFileSync(imagePath).toString("base64");
+    const systemPrompt = `You are a fashion categorization assistant. You must analyze the image and return a JSON object with exactly two keys: "category" and "label".
+  
+The "category" MUST be exactly one of these strings: "top", "bottom", "shoes", "outer", "dress", "accessory".
+The "label" should be a short, descriptive name for the item (e.g., "blue denim jacket", "white sneakers").
+${manualCategory ? `\nThe user has manually specified the category as "${manualCategory}". You MUST set "category" to "${manualCategory}" and only focus on generating an accurate "label".` : ""}
+Respond ONLY with the JSON object, no markdown formatting.`;
+    const response = await model.generateContent([
+        systemPrompt,
+        {
+            inlineData: {
+                data: base64Image,
+                mimeType: mimeType
+            }
+        }
+    ]);
+    const content = response.response.text();
+    console.log("----- Gemini Classification Complete -----");
+    console.log("Raw Content:", content);
+    if (!content)
+        throw new Error("No content from Gemini");
+    const parsed = JSON.parse(content);
+    console.log("Parsed Output:", parsed);
+    const validCategories = ["top", "bottom", "shoes", "outer", "dress", "accessory"];
+    let finalCategory = manualCategory || null;
+    if (!manualCategory && parsed.category && validCategories.includes(parsed.category.toLowerCase())) {
+        finalCategory = parsed.category.toLowerCase();
     }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
+    return {
+        label: parsed.label || "unknown",
+        category: finalCategory,
+        confidence: 0.95
     };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.classifyImage = classifyImage;
-const tf = __importStar(require("@tensorflow/tfjs"));
-const mobilenet = __importStar(require("@tensorflow-models/mobilenet"));
-const jimp_1 = __importDefault(require("jimp"));
-const LABEL_TO_CATEGORY = {
-    tshirt: "top",
-    shirt: "top",
-    blouse: "top",
-    sweater: "top",
-    hoodie: "top",
-    jeans: "bottom",
-    pants: "bottom",
-    shorts: "bottom",
-    skirt: "bottom",
-    sneaker: "shoes",
-    boot: "shoes",
-    heel: "shoes",
-    loafer: "shoes",
-    shoe: "shoes",
-    jacket: "outer",
-    coat: "outer",
-    cardigan: "outer",
-    blazer: "outer",
-    dress: "dress",
-    hat: "accessory",
-    belt: "accessory",
-    bag: "accessory",
-    scarf: "accessory",
-    watch: "accessory",
-};
-function canonicalize(label) {
-    const raw = String(label || "")
-        .toLowerCase()
-        .replace(/[^a-z]/g, "");
-    const alias = {
-        tshirts: "tshirt",
-        sweatshirt: "sweater",
-        jumper: "sweater",
-        pullover: "sweater",
-        sneakers: "sneaker",
-        boots: "boot",
-        loafers: "loafer",
-        heels: "heel",
-        runningshoe: "sneaker",
-        dressshoe: "shoe",
-        flipflop: "shoe",
-        sandal: "shoe",
-        trousers: "pants",
-        legging: "leggings",
-    };
-    return alias[raw] || raw;
 }
-function inferCategoryFromRaw(raw) {
-    const s = String(raw || "").toLowerCase();
-    if (/shirt|tee|blouse|sweater|hoodie|top/.test(s))
-        return "top";
-    if (/jeans|pant|trouser|skirt|short/.test(s))
-        return "bottom";
-    if (/shoe|sneaker|boot|loafer|heel|flip\s?flop|sandal/.test(s))
-        return "shoes";
-    if (/jacket|coat|cardigan|blazer/.test(s))
-        return "outer";
-    if (/dress/.test(s))
-        return "dress";
-    if (/hat|belt|bag|scarf|watch/.test(s))
-        return "accessory";
-    return null;
-}
-/**
- * Decodes an image using Jimp and converts it to a 3D Tensor for TensorFlow.js
- */
-async function imageToTensor(imagePath) {
-    const image = await jimp_1.default.read(imagePath);
-    image.cover(224, 224); // MobileNet expects 224x224
-    const width = image.bitmap.width;
-    const height = image.bitmap.height;
-    const data = image.bitmap.data;
-    // Jimp data is RGBA, MobileNet expects RGB
-    const buffer = new Float32Array(width * height * 3);
-    for (let i = 0; i < width * height; i++) {
-        buffer[i * 3] = data[i * 4]; // R
-        buffer[i * 3 + 1] = data[i * 4 + 1]; // G
-        buffer[i * 3 + 2] = data[i * 4 + 2]; // B
+async function classifyWithOpenAI(imagePath, manualCategory) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    const openai = new OpenAI({ apiKey });
+    const ext = path.extname(imagePath).toLowerCase().replace(".", "") || "jpeg";
+    const mimeType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+    const base64Image = fs.readFileSync(imagePath).toString("base64");
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+    const systemPrompt = `You are a fashion categorization assistant. You must analyze the image and return a JSON object with exactly two keys: "category" and "label".
+  
+The "category" MUST be exactly one of these strings: "top", "bottom", "shoes", "outer", "dress", "accessory".
+The "label" should be a short, descriptive name for the item (e.g., "blue denim jacket", "white sneakers").
+${manualCategory ? `\nThe user has manually specified the category as "${manualCategory}". You MUST set "category" to "${manualCategory}" and only focus on generating an accurate "label".` : ""}
+Respond ONLY with the JSON object, no markdown formatting.`;
+    const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+            {
+                role: "system",
+                content: systemPrompt,
+            },
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: dataUrl,
+                            detail: "low",
+                        },
+                    },
+                ],
+            },
+        ],
+        response_format: { type: "json_object" },
+    });
+    const content = response.choices?.[0]?.message?.content;
+    console.log("----- OpenAI Classification Complete -----");
+    console.log("Raw Content:", content);
+    if (!content)
+        throw new Error("No content from OpenAI");
+    const parsed = JSON.parse(content);
+    console.log("Parsed Output:", parsed);
+    const validCategories = ["top", "bottom", "shoes", "outer", "dress", "accessory"];
+    let finalCategory = manualCategory || null;
+    if (!manualCategory && parsed.category && validCategories.includes(parsed.category.toLowerCase())) {
+        finalCategory = parsed.category.toLowerCase();
     }
-    return tf.tensor3d(buffer, [height, width, 3]);
+    return {
+        label: parsed.label || "unknown",
+        category: finalCategory,
+        confidence: 0.95
+    };
 }
-async function classifyImage(imagePath) {
+export async function classifyImage(imagePath, manualCategory) {
     try {
-        // 1. Load the model
-        const model = await mobilenet.load();
-        // 2. Decode the image into a Tensor
-        const tfImage = await imageToTensor(imagePath);
-        // 3. Classify
-        const results = await model.classify(tfImage);
-        const top = results?.[0] || { className: "", probability: 0 };
-        const rawLabel = top.className || "";
-        const label = canonicalize(rawLabel);
-        const category = LABEL_TO_CATEGORY[label] || inferCategoryFromRaw(rawLabel);
-        // 4. Cleanup tensor
-        tfImage.dispose();
-        return { label, category, confidence: Number(top.probability || 0) };
+        if (process.env.GEMINI_API_KEY) {
+            console.log("Using Gemini for classification...");
+            return await classifyWithGemini(imagePath, manualCategory);
+        }
+        else if (process.env.OPENAI_API_KEY) {
+            console.log("Using OpenAI for classification...");
+            return await classifyWithOpenAI(imagePath, manualCategory);
+        }
+        else {
+            console.warn("No GEMINI_API_KEY or OPENAI_API_KEY found, falling back to basic classification.");
+            return { label: "unknown", category: manualCategory || null, confidence: 0 };
+        }
     }
     catch (error) {
         console.error("Classification error:", error);
-        return { label: "unknown", category: null, confidence: 0 };
+        return { label: "unknown", category: manualCategory || null, confidence: 0 };
+    }
+}
+export async function extractAverageColorHex(imagePath) {
+    try {
+        const image = await Jimp.read(imagePath);
+        image.resize(32, 32);
+        let red = 0;
+        let green = 0;
+        let blue = 0;
+        let count = 0;
+        for (let y = 0; y < image.bitmap.height; y += 1) {
+            for (let x = 0; x < image.bitmap.width; x += 1) {
+                const { r, g, b, a } = Jimp.intToRGBA(image.getPixelColor(x, y));
+                if (a === 0)
+                    continue;
+                red += r;
+                green += g;
+                blue += b;
+                count += 1;
+            }
+        }
+        if (count === 0) {
+            return "#b8a18a";
+        }
+        const toHex = (value) => Math.round(value).toString(16).padStart(2, "0");
+        return `#${toHex(red / count)}${toHex(green / count)}${toHex(blue / count)}`;
+    }
+    catch (error) {
+        console.error("Color extraction error:", error);
+        return "#b8a18a";
     }
 }

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { getSupabaseAnon } from "../config/supabase";
-import { clearSessionCookie, getAuthenticatedUser, setSessionCookie } from "../auth/httpSession";
-import { createSession } from "../auth/sessionStore";
+import { getSupabaseAnon } from "../config/supabase.js";
+import { clearSessionCookie, getAuthenticatedUser, setSessionCookie } from "../auth/httpSession.js";
+import { createSession } from "../auth/sessionStore.js";
 
 function normalizeEmail(email: unknown) {
   return String(email || "").trim().toLowerCase();
@@ -236,3 +236,4 @@ export const session = async (req: Request, res: Response) => {
   if (!user) return res.json({ ok: true, user: null });
   return res.json({ ok: true, user });
 };
+

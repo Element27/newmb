@@ -1,24 +1,21 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.runWeeklyPlannerJob = runWeeklyPlannerJob;
-exports.startWeeklyPlannerJob = startWeeklyPlannerJob;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const supabase_1 = require("../config/supabase");
-const plannerController_1 = require("../controllers/plannerController");
-const weeklyPlanner_1 = require("../utils/weeklyPlanner");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { getSupabaseServer } from "../config/supabase.js";
+import { generatePlanForUser } from "../controllers/plannerController.js";
+import { getNextMonday, toISODate } from "../utils/weeklyPlanner.js";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 function getStateFile() {
-    return path_1.default.join(__dirname, "../../data/weeklyPlannerJobState.json");
+    return path.join(__dirname, "../../data/weeklyPlannerJobState.json");
 }
 function readState() {
     const file = getStateFile();
-    if (!fs_1.default.existsSync(file))
+    if (!fs.existsSync(file))
         return {};
     try {
-        return JSON.parse(fs_1.default.readFileSync(file, "utf-8"));
+        return JSON.parse(fs.readFileSync(file, "utf-8"));
     }
     catch {
         return {};
@@ -26,13 +23,13 @@ function readState() {
 }
 function writeState(state) {
     const file = getStateFile();
-    const dir = path_1.default.dirname(file);
-    if (!fs_1.default.existsSync(dir))
-        fs_1.default.mkdirSync(dir, { recursive: true });
-    fs_1.default.writeFileSync(file, JSON.stringify(state, null, 2));
+    const dir = path.dirname(file);
+    if (!fs.existsSync(dir))
+        fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(state, null, 2));
 }
 async function getEligibleUserIds() {
-    const supabase = (0, supabase_1.getSupabaseServer)();
+    const supabase = getSupabaseServer();
     if (!supabase)
         return [];
     const { data, error } = await supabase
@@ -43,12 +40,12 @@ async function getEligibleUserIds() {
         return [];
     return data.map((row) => String(row.user_id)).filter(Boolean);
 }
-async function runWeeklyPlannerJob(force = false) {
+export async function runWeeklyPlannerJob(force = false) {
     const now = new Date();
     const isSaturday = now.getDay() === 6;
     if (!force && !isSaturday)
         return;
-    const todayISO = (0, weeklyPlanner_1.toISODate)(now);
+    const todayISO = toISODate(now);
     const state = readState();
     if (!force && state.lastRunSaturday === todayISO)
         return;
@@ -59,13 +56,13 @@ async function runWeeklyPlannerJob(force = false) {
         }
         return;
     }
-    const weekStart = (0, weeklyPlanner_1.toISODate)((0, weeklyPlanner_1.getNextMonday)(now));
-    await Promise.all(userIds.map((userId) => (0, plannerController_1.generatePlanForUser)(userId, weekStart)));
+    const weekStart = toISODate(getNextMonday(now));
+    await Promise.all(userIds.map((userId) => generatePlanForUser(userId, weekStart)));
     if (isSaturday || force) {
         writeState({ lastRunSaturday: todayISO });
     }
 }
-function startWeeklyPlannerJob() {
+export function startWeeklyPlannerJob() {
     void runWeeklyPlannerJob(false);
     const everyHourMs = 60 * 60 * 1000;
     setInterval(() => {

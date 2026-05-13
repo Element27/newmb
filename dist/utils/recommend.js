@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.recommendOutfit = recommendOutfit;
 function isNeutral(hex) {
     const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || "");
     if (!m)
@@ -10,7 +7,7 @@ function isNeutral(hex) {
     const diff = max - min; // small diff => grayish
     return diff < 15 || (r < 40 && g < 40 && b < 40) || (r > 220 && g > 220 && b > 220);
 }
-function recommendOutfit(items, occasion) {
+export function recommendOutfit(items, occasion) {
     const byCat = new Map([
         ["top", []],
         ["bottom", []],

@@ -1,8 +1,13 @@
 import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
-import { classifyImage } from "../utils/classifier";
-import { requireAuthenticatedUser } from "../auth/httpSession";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { classifyImage } from "../utils/classifier.js";
+import { requireAuthenticatedUser } from "../auth/httpSession.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 function inferCategoryFromName(
     name: string
@@ -79,3 +84,4 @@ export const processImage = async (req: Request, res: Response) => {
         });
     }
 };
+

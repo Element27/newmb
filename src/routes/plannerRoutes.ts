@@ -4,7 +4,7 @@ import {
   getWeeklyPlan,
   regenerateWeeklyPlanDay,
   updateWeeklyPlanDay,
-} from "../controllers/plannerController";
+} from "../controllers/plannerController.js";
 
 const router = Router();
 
@@ -14,3 +14,4 @@ router.patch("/day", updateWeeklyPlanDay);
 router.post("/day/regenerate", regenerateWeeklyPlanDay);
 
 export default router;
+

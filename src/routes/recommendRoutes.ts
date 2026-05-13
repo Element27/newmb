@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { recommend } from "../controllers/recommendController";
+import { recommend, getDailySuggestion } from "../controllers/recommendController.js";
 
 const router = Router();
 
 router.post("/", recommend);
+router.get("/daily", getDailySuggestion);
 
 export default router;
+
